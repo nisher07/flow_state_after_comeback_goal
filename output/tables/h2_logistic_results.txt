@@ -1,0 +1,53 @@
+Logistic model of who scores next after an equaliser
+
+equalisers: 1547 | decided (next goal exists): 968 | censored ('none'): 579
+
+Censoring check ('none' vs covariates) - p-values:
+(Intercept)     elo_100   home_sign    minute_c 
+      0.000       0.350       0.565       0.000 
+(eq_minute inevitably predicts censoring - later equaliser, less time 
+ for another goal. Quality/venue should NOT predict it.)
+
+
+Call:
+glm(formula = y ~ elo_100 + home_sign, family = binomial(), data = decided)
+
+Coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.07064    0.06729   1.050    0.294    
+elo_100      0.36702    0.04729   7.761 8.46e-15 ***
+home_sign    0.27134    0.06743   4.024 5.72e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 1341.7  on 967  degrees of freedom
+Residual deviance: 1260.2  on 965  degrees of freedom
+AIC: 1266.2
+
+Number of Fisher Scoring iterations: 4
+
+AIC            : 1266.2
+Log-likelihood : -630.1 (df = 3)
+--------------------------------------------------------------
+
+Primary logistic (match-clustered SEs):
+  (Intercept)  OR 1.073  [0.941, 1.224]  p = 0.292   <- momentum test (null: OR = 1)
+   elo_100      OR 1.443  [1.314, 1.585]  p = 0.000
+   home_sign    OR 1.312  [1.151, 1.495]  p = 0.000
+Extended model (adds equaliser minute, scoreline):
+  (Intercept)  OR 0.949  [0.783, 1.150]  p = 0.592
+   elo_100      OR 1.440  [1.308, 1.584]  p = 0.000
+   home_sign    OR 1.326  [1.161, 1.516]  p = 0.000
+   minute_c     OR 0.939  [0.849, 1.039]  p = 0.222
+   score_f2-2   OR 1.190  [0.824, 1.717]  p = 0.353
+   score_f3-3+  OR 4.608  [1.780, 11.927]  p = 0.002
+
+Worst-case censoring bounds on the momentum OR: [0.462, 2.395]
+(true value lies inside; bounds are extreme assumptions about 'none' cases)
+
+==========================================================
+Logistic Model Summary (who scores next)
+==========================================================
+momentum test (intercept): OR 1.073 [0.941, 1.224], p = 0.292  (null: OR = 1)

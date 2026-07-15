@@ -10,7 +10,10 @@ required <- c(
   "lme4",       # mixed models (candidate for the momentum analysis)
   "broom",      # tidy model output
   "knitr",      # notebooks / reports
-  "rmarkdown"   # notebooks / reports
+  "rmarkdown",  # notebooks / reports
+  "statmod",    # tweedie family for glm (fixed variance power)
+  "sandwich",   # match-clustered standard errors
+  "lmtest"      # coefficient tests with clustered vcov
 )
 
 missing <- setdiff(required, rownames(installed.packages()))

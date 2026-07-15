@@ -1,0 +1,80 @@
+Tweedie model of xG per 5-min window
+training bins: 99,776 | treatment (eq <= 70'): 3156 | mirror: 3156
+
+Tweedie power p = 1.528  (must lie strictly in (1,2))
+
+--- MODEL ---------------------------------------------------
+Formula : xg ~ goal_diff_c + s(bin_start, k = 8) + s(elo_diff, k = 6) +      is_home + season_f 
+Family  : Tweedie(p=1.528) | link: log 
+
+
+Family: Tweedie(p=1.528) 
+Link function: log 
+
+Formula:
+xg ~ goal_diff_c + s(bin_start, k = 8) + s(elo_diff, k = 6) + 
+    is_home + season_f
+
+Parametric coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -2.69831    0.02727 -98.953  < 2e-16 ***
+goal_diff_c-1 -0.38333    0.02428 -15.789  < 2e-16 ***
+goal_diff_c0  -0.05182    0.02235  -2.318 0.020442 *  
+goal_diff_c1   0.07861    0.02362   3.329 0.000873 ***
+goal_diff_c2   0.08832    0.02578   3.425 0.000615 ***
+is_homeTRUE    0.23482    0.01169  20.084  < 2e-16 ***
+season_f2017  -0.02906    0.02668  -1.089 0.276116    
+season_f2018   0.13969    0.02610   5.352 8.73e-08 ***
+season_f2019   0.11652    0.02618   4.451 8.57e-06 ***
+season_f2020   0.03521    0.02650   1.329 0.183981    
+season_f2021   0.12147    0.02618   4.639 3.50e-06 ***
+season_f2022   0.08870    0.02626   3.378 0.000730 ***
+season_f2023   0.18265    0.02608   7.004 2.51e-12 ***
+season_f2024   0.15566    0.02613   5.956 2.59e-09 ***
+season_f2025   0.19226    0.02596   7.406 1.32e-13 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+               edf Ref.df     F p-value    
+s(bin_start) 6.870  6.994 173.1  <2e-16 ***
+s(elo_diff)  4.348  4.807 321.1  <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =   0.04   Deviance explained = 4.72%
+fREML = 1.4214e+05  Scale est. = 1.005     n = 99776
+
+AIC            : 63191.4
+Log-likelihood : -31566.9 (df = 28.8)
+--------------------------------------------------------------
+
+Calibration by state x period (observed/predicted, training data):
+    state    period predicted observed     n ratio
+  leading  min 0-29    0.0900   0.0912  4242 1.013
+  leading min 30-59    0.1069   0.1060 10102 0.991
+  leading min 60-89    0.1211   0.1209 12416 0.998
+    level  min 0-29    0.0673   0.0681 26862 1.013
+    level min 30-59    0.0813   0.0810 12156 0.996
+    level min 60-89    0.0906   0.0891  7238 0.984
+ trailing  min 0-29    0.0499   0.0490  4242 0.983
+ trailing min 30-59    0.0619   0.0600 10102 0.969
+ trailing min 60-89    0.0731   0.0750 12416 1.026
+
+Placebo test (B=1000): treatment gap = +0.0014 xG/bin | placebo mean = -0.0004, 95% band [-0.0061, 0.0060] | two-sided p = 0.548
+
+Robustness checks:
+  (a) shots, treatment:                  observed 0.733 vs predicted 0.710 shots/bin (ratio 1.033) 
+  (a) shots, opponent mirror:            observed 0.685 vs predicted 0.717 shots/bin (ratio 0.955) 
+  (b) excl. stoppage bins:       gap +0.0016 xG/bin (ratio 1.020)
+  (c) truncated at next goal:    gap -0.0015 xG/bin (ratio 0.981, 2532 bins kept of 3156)
+
+==========================================================
+Poisson Model Summary (xG per 5-min bin)
+==========================================================
+                   set n_bins observed predicted      gap ratio
+ treatment (eq <= 70')   3156   0.0814    0.0799  0.00144  1.02
+       opponent mirror   3156   0.0755    0.0812 -0.00571  0.93
+ placebo_p_two_sided tweedie_power
+               0.548          1.53
+                  NA          1.53

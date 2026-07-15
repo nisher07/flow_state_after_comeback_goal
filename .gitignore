@@ -28,3 +28,6 @@ renv/python/
 Thumbs.db
 .history
 .claude/
+
+# Local notes (not committed)
+notes/
