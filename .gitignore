@@ -1,0 +1,30 @@
+# Data (raw and derived data stay local; scripts, tables, and figures are committed)
+data/
+
+# Local-only project files (kept out of the repo by request)
+project_instruction.md
+notebooks/02_datasets_doc.ipynb
+notebooks/build_datasets_doc.py
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.Rdata
+.RData
+.Rproj.user/
+renv/library/
+renv/staging/
+renv/python/
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+.history
+.claude/
