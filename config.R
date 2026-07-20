@@ -27,7 +27,7 @@ for (d in c(DATA_RAW_DIR, DATA_PROCESSED_DIR, OUTPUT_FIGURES_DIR, OUTPUT_TABLES_
   if (!dir.exists(d)) dir.create(d, recursive = TRUE)
 }
 
-# ── Project plot theme ────────────────────────────────────────────────────────
+# Project plot theme
 # Used by every plot in the project. Grey marks carry direct value labels
 # (low contrast on the cream surface is compensated by labelling, not color).
 COL_EQ      <- "#1F3A93"   # equalising team — deep blue
@@ -36,6 +36,37 @@ COL_NEUTRAL <- "#2C3E50"   # structure / neutral text
 COL_BG      <- "#FAF6F1"   # cream background
 COL_GRID    <- "#D8D2C7"   # grid lines
 COL_GREY    <- "#AAAAAA"   # no-goal / neutral category
+FOOTBALL    <- "⚽"
+
+# Visual identity — shared theme
+# Used by R/04_report_figures.R. Scripts with their own layout needs (e.g. a
+# bar chart with no facets and no legend) should call theme_sport() and layer
+# targeted overrides on top with theme(...), not redefine the whole function.
+theme_sport <- function(base_size = 13) {
+  ggplot2::theme_minimal(base_size = base_size) +
+    ggplot2::theme(
+      plot.background    = ggplot2::element_rect(fill = COL_BG,  colour = NA),
+      panel.background   = ggplot2::element_rect(fill = COL_BG,  colour = NA),
+      panel.grid.major   = ggplot2::element_line(colour = COL_GRID, linewidth = 0.3),
+      panel.grid.minor   = ggplot2::element_blank(),
+      plot.title         = ggplot2::element_text(face = "bold", size = base_size + 4,
+                                                 colour = COL_NEUTRAL),
+      plot.subtitle      = ggplot2::element_text(size = base_size - 2, colour = "grey30",
+                                                 margin = ggplot2::margin(b = 12)),
+      plot.caption       = ggplot2::element_text(size = base_size - 5, colour = "grey50",
+                                                 hjust = 0),
+      axis.title         = ggplot2::element_text(face = "bold", size = base_size - 4,
+                                                 colour = COL_NEUTRAL),
+      axis.text          = ggplot2::element_text(size = base_size - 4, colour = "grey30"),
+      legend.position    = "top",
+      legend.title       = ggplot2::element_blank(),
+      legend.text        = ggplot2::element_text(size = base_size - 2, face = "bold"),
+      strip.text         = ggplot2::element_text(face = "bold", size = base_size + 1,
+                                                 colour = COL_NEUTRAL),
+      strip.background   = ggplot2::element_rect(fill = "white", colour = NA),
+      plot.margin        = ggplot2::margin(20, 20, 15, 20)
+    )
+}
 
 theme_momentum <- function(base_size = 11) {
   ggplot2::theme_minimal(base_size = base_size) +

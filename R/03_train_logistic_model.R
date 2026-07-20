@@ -1,4 +1,4 @@
-# 04_train_logistic_model.R
+# 03_train_logistic_model.R
 # ==============================================================================
 # After equalising, is the equalising team more likely to score the next
 # goal than team quality predicts?
@@ -15,17 +15,16 @@
 #      behave differently?).
 #   3. Censoring: 'no further goal' cases - balance check plus worst-case
 #      bounds (all 'none' -> opponent / all 'none' -> team).
-#   4. Figure: observed shares and fitted curve vs ELO difference.
 #
 # All printed results are also saved to output/tables/h2_logistic_results.txt.
+# All figures live in R/04_report_figures.R.
 #
-# Run from the project root:  Rscript R/04_train_logistic_model.R
+# Run from the project root:  Rscript R/03_train_logistic_model.R
 
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(readr)
-  library(ggplot2)
   library(sandwich)
   library(lmtest)
 })
@@ -46,6 +45,7 @@ eqs <- read_csv(file.path(DATA_PROCESSED_DIR, "equaliser_events.csv"),
                         if_else(scoreline == "2-2", "2-2", "3-3+")))
   )
 
+# check how many equalisers are followed by a next goal vs. censored ('none')
 decided <- eqs %>%
   filter(next_goal != "none") %>%
   mutate(y = as.integer(next_goal == "team"))
@@ -53,7 +53,7 @@ decided <- eqs %>%
 cat(sprintf("equalisers: %d | decided (next goal exists): %d | censored ('none'): %d\n\n",
             nrow(eqs), nrow(decided), sum(eqs$next_goal == "none")))
 
-# ── censoring balance: is 'none' related to quality/venue/time? ──────────────
+# censoring balance: is 'none' related to quality/venue/time?
 cens <- glm(I(next_goal == "none") ~ elo_100 + home_sign + minute_c,
             family = binomial(), data = eqs)
 cat("Censoring check ('none' vs covariates) - p-values:\n")
@@ -61,7 +61,7 @@ print(round(coef(summary(cens))[, 4], 3))
 cat("(eq_minute inevitably predicts censoring - later equaliser, less time",
     "\n for another goal. Quality/venue should NOT predict it.)\n\n")
 
-# ── 1. primary model ──────────────────────────────────────────────────────────
+# 1. primary model
 fit <- glm(y ~ elo_100 + home_sign, family = binomial(), data = decided)
 ct  <- coeftest(fit, vcov = vcovCL(fit, cluster = decided$match_id))
 
@@ -78,7 +78,7 @@ cat(sprintf("  %-12s OR %.3f  [%.3f, %.3f]  p = %.3f%s\n",
             ct[, 4],
             c("   <- momentum test (null: OR = 1)", "", "")))
 
-# ── 2. extended model: does the picture change late / at higher scorelines? ──
+# 2. extended model: does the picture change late / at higher scorelines?
 fit_ext <- glm(y ~ elo_100 + home_sign + minute_c + score_f,
                family = binomial(), data = decided)
 ct_ext <- coeftest(fit_ext, vcov = vcovCL(fit_ext, cluster = decided$match_id))
@@ -88,7 +88,7 @@ cat(sprintf("  %-12s OR %.3f  [%.3f, %.3f]  p = %.3f\n",
             exp(ct_ext[, 1] - 1.96 * ct_ext[, 2]),
             exp(ct_ext[, 1] + 1.96 * ct_ext[, 2]), ct_ext[, 4]))
 
-# ── 3. censoring bounds ───────────────────────────────────────────────────────
+# 3. censoring bounds
 bound <- function(none_as) {
   d <- eqs %>% mutate(y = as.integer(
     if_else(next_goal == "none", none_as == "team", next_goal == "team")))
@@ -99,53 +99,7 @@ cat(sprintf("\nWorst-case censoring bounds on the momentum OR: [%.3f, %.3f]\n",
             bound("opponent"), bound("team")))
 cat("(true value lies inside; bounds are extreme assumptions about 'none' cases)\n")
 
-# ── 4. figure ─────────────────────────────────────────────────────────────────
-hs <- mean(decided$home_sign == 1)   # observed share of home equalisers
-grid <- tibble(elo_100 = seq(-4, 4, 0.1)) %>%
-  crossing(home_sign = c(1, -1)) %>%
-  mutate(p = predict(fit, newdata = ., type = "response")) %>%
-  group_by(elo_100) %>%
-  summarise(p = hs * p[home_sign == 1] + (1 - hs) * p[home_sign == -1],
-            .groups = "drop")
-
-pts <- decided %>%
-  mutate(bin = cut(elo_100, breaks = c(-Inf, -2, -1, -0.33, 0.33, 1, 2, Inf))) %>%
-  group_by(bin) %>%
-  summarise(elo_100 = mean(elo_100), p = mean(y), n = n(), .groups = "drop")
-
-p_fig <- ggplot(grid, aes(elo_100 * 100, p)) +
-  geom_hline(yintercept = 0.5, linetype = "dashed", colour = COL_NEUTRAL,
-             linewidth = 0.5) +
-  geom_vline(xintercept = 0, linetype = "dotted", colour = COL_GRID) +
-  geom_line(colour = COL_EQ, linewidth = 1.1) +
-  geom_point(data = pts, aes(size = n), colour = COL_EQ, alpha = 0.75) +
-  scale_size_area(max_size = 7, guide = "none") +
-  annotate("text", x = -390, y = 0.53, hjust = 0, size = 3.2,
-           colour = COL_NEUTRAL, fontface = "italic",
-           label = "coin flip (no momentum)") +
-  annotate("text", x = 130, y = 0.30, hjust = 0, lineheight = 0.95,
-           size = 3.1, colour = COL_NEUTRAL, fontface = "bold",
-           label = sprintf(
-             "At equal team strength the next goal is\na coin flip (OR %.2f, p = %.2f) -\nmomentum would sit clearly above the line",
-             exp(ct[1, 1]), ct[1, 4])) +
-  labs(
-    title = "Who Scores Next After an Equaliser? Mostly the Better Team",
-    subtitle = sprintf(
-      "Probability the equalising team scores the match's next goal vs its ELO advantage\n%s decided cases (of %s equalisers), Bundesliga 2016/17-2025/26 - dots: observed shares, sized by n",
-      format(nrow(decided), big.mark = ","), format(nrow(eqs), big.mark = ",")),
-    x = "equalising team's ELO advantage (points)",
-    y = "P(equalising team scores next)",
-    caption = "Curve: logistic fit (ELO + venue, venue-averaged). Matches with no further goal excluded; bounds reported in analysis."
-  ) +
-  coord_cartesian(ylim = c(0.15, 0.85)) +
-  theme_momentum() +
-  theme(plot.caption = element_text(colour = COL_GREY, hjust = 0, size = 8.5),
-        plot.subtitle = element_text(size = 9.5))
-
-ggsave(file.path(OUTPUT_FIGURES_DIR, "h2_next_goal.png"), p_fig,
-       width = 9, height = 5.5, dpi = 150, bg = COL_BG)
-
-# ── summary ───────────────────────────────────────────────────────────────────
+# summary
 cat("\n==========================================================\n")
 cat("Logistic Model Summary (who scores next)\n")
 cat("==========================================================\n")

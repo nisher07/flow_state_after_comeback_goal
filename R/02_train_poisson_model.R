@@ -17,7 +17,7 @@
 #      drop treatment bins after the state changed again (truncation).
 #
 # All printed results are also saved to output/tables/h1_poisson_results.txt.
-# Plots of the effect live in 03_plot_momentum_curve.R.
+# Plots of the effect live in 04_report_figures.R.
 #
 # Run from the project root:  Rscript R/02_train_poisson_model.R
 
@@ -37,7 +37,7 @@ cat("Tweedie model of xG per 5-min window\n")
 windows <- read_csv(file.path(DATA_PROCESSED_DIR, "team_windows.csv"),
                     show_col_types = FALSE)
 
-# ── 1. Split ──────────────────────────────────────────────────────────────────
+# 1. Split
 windows <- windows %>%
   filter(!own_washout, !opp_washout) %>%          # washout bins: neither side
   mutate(
@@ -52,7 +52,7 @@ mirror <- windows %>% filter(opp_post, opp_post_eq_minute <= 70)
 cat(sprintf("training bins: %s | treatment (eq <= 70'): %s | mirror: %s\n\n",
             format(nrow(train), big.mark = ","), nrow(treat), nrow(mirror)))
 
-# ── 2. Fit "normal football" model (training bins only) ──────────────────────
+# 2. Fit "normal football" model (training bins only)
 # bam + discrete for speed on ~100k rows; tw() estimates the Tweedie power.
 form <- xg ~ goal_diff_c + s(bin_start, k = 8) + s(elo_diff, k = 6) +
         is_home + season_f
@@ -70,7 +70,7 @@ cat(sprintf("Log-likelihood : %.1f (df = %.1f)\n",
             as.numeric(logLik(fit)), attr(logLik(fit), "df")))
 cat("--------------------------------------------------------------\n")
 
-# ── 3. Calibration on training data ──────────────────────────────────────────
+# 3. Calibration on training data
 train$pred <- as.numeric(predict(fit, newdata = train, type = "response"))
 
 calib_slice <- train %>%
@@ -84,7 +84,7 @@ calib_slice <- train %>%
 cat("\nCalibration by state x period (observed/predicted, training data):\n")
 print(as.data.frame(calib_slice), row.names = FALSE, digits = 3)
 
-# ── 4. Counterfactual comparison on held-out bins ─────────────────────────────
+# 4. Counterfactual comparison on held-out bins
 gap_summary <- function(df, label) {
   pr <- as.numeric(predict(fit, newdata = df, type = "response"))
   tibble(set = label, n_bins = nrow(df),
@@ -97,7 +97,7 @@ effects <- bind_rows(
   gap_summary(mirror, "opponent mirror")
 )
 
-# ── 5. Placebo inference ─────────────────────────────────────────────────────
+# 5. Placebo inference
 B <- 1000
 controls <- train %>% filter(state == "level")
 bin_counts <- treat %>% count(bin)
@@ -118,7 +118,7 @@ cat(sprintf("\nPlacebo test (B=%d): treatment gap = %+.4f xG/bin | placebo mean 
             B, gap_t1, mean(placebo),
             quantile(placebo, .025), quantile(placebo, .975), p_two))
 
-# ── 6. Robustness ─────────────────────────────────────────────────────────────
+# 6. Robustness
 cat("\nRobustness checks:\n")
 
 # (a) Poisson on shot counts
@@ -156,7 +156,7 @@ cat(sprintf("  (c) truncated at next goal:    gap %+.4f xG/bin (ratio %.3f, %d b
             mean(treat_trunc$xg - pr_tr), mean(treat_trunc$xg) / mean(pr_tr),
             nrow(treat_trunc), nrow(treat)))
 
-# ── summary ───────────────────────────────────────────────────────────────────
+# summary
 effects <- effects %>%
   mutate(placebo_p_two_sided = c(p_two, NA),
          tweedie_power = p_hat)

@@ -3,9 +3,6 @@
 ==============================================================================
 Pulls all Bundesliga shot-level data from Understat for seasons 2016/17–2025/26.
 
-Incremental: matches already present in shots_raw.csv are skipped, so re-runs
-only fetch new seasons (or matches that failed on a previous run).
-
 CONFIRMED field names from real API output:
   Shot dict keys: id, minute, result, X, Y, xG, player, h_a, player_id,
                   situation, season, shotType, match_id, h_team, a_team,

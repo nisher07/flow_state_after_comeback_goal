@@ -5,6 +5,9 @@ data/
 project_instruction.md
 notebooks/02_datasets_doc.ipynb
 notebooks/build_datasets_doc.py
+logistic_explanation.md
+R/05_article_figures.R
+output/figures/article/
 
 # Python
 __pycache__/

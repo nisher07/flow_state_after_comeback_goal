@@ -1,0 +1,50 @@
+minute,team,xg,result,situation
+1,Germany,0.07,MissedShots,OpenPlay
+10,Germany,0.06,SavedShot,OpenPlay
+12,Ivory Coast,0.09,BlockedShot,OpenPlay
+18,Germany,0.04,MissedShots,OpenPlay
+21,Germany,0.03,BlockedShot,OpenPlay
+30,Ivory Coast,0.3,BlockedShot,OpenPlay
+30,Ivory Coast,0.3,Goal,OpenPlay
+38,Ivory Coast,0.05,SavedShot,FastBreak
+41,Germany,0.06,BlockedShot,OpenPlay
+42,Germany,0.02,BlockedShot,FromCorner
+47,Germany,0.03,BlockedShot,OpenPlay
+51,Germany,0.3,SavedShot,OpenPlay
+46,Ivory Coast,0.02,BlockedShot,OpenPlay
+50,Ivory Coast,0.16,BlockedShot,FastBreak
+51,Ivory Coast,0.2,MissedShots,FastBreak
+56,Ivory Coast,0.07,MissedShots,OpenPlay
+57,Germany,0.02,MissedShots,OpenPlay
+61,Germany,0.02,MissedShots,OpenPlay
+63,Germany,0.07,MissedShots,FromCorner
+68,Germany,0.63,Goal,OpenPlay
+84,Ivory Coast,0.02,BlockedShot,OpenPlay
+86,Germany,0.02,SavedShot,OpenPlay
+89,Germany,0.09,SavedShot,OpenPlay
+91,Germany,0.08,SavedShot,OpenPlay
+94,Germany,0.35,Goal,OpenPlay
+15,Egypt,0.1,Goal,FromCorner
+21,Argentina,0.79,SavedShot,Penalty
+28,Argentina,0.30,SavedShot,OpenPlay
+29,Argentina,0.08,BlockedShot,OpenPlay
+31,Argentina,0.03,Post,Freekick
+35,Egypt,0.02,MissedShots,OpenPlay
+38,Argentina,0.05,MissedShots,OpenPlay
+39,Argentina,0.26,SavedShot,OpenPlay
+43,Argentina,0.05,MissedShots,OpenPlay
+47,Argentina,0.04,SavedShot,OpenPlay
+53,Argentina,0.01,MissedShots,SetPiece
+58,Argentina,0.01,BlockedShot,OpenPlay
+61,Argentina,0.1,MissedShots,SetPiece
+67,Egypt,0.64,Goal,FastBreak
+70,Argentina,0.02,MissedShots,OpenPlay
+74,Argentina,0.14,BlockedShot,SetPiece
+75,Argentina,0.13,MissedShots,OpenPlay
+77,Egypt,0.04,MissedShots,OpenPlay
+78,Argentina,0.07,BlockedShot,OpenPlay
+79,Argentina,0.35,Goal,OpenPlay
+82,Argentina,0.16,MissedShots,OpenPlay
+83,Argentina,0.07,Goal,OpenPlay
+92,Egypt,0.09,MissedShots,OpenPlay
+92,Argentina,0.17,Goal,FastBreak

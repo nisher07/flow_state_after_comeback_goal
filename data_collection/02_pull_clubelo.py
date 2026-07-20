@@ -6,7 +6,7 @@ match date in the Understat data.
 
 CONFIRMED from real API output:
   Columns : Rank, Club, Country, Level, Elo, From, To
-  Country codes: 'GER' for Germany  (NOT 'DEU' as previously assumed)
+  Country codes: 'GER' for Germany  (NOT 'DEU')
   Level values : integer 1 / 2 / 0
 
 CONFIRMED Bundesliga team names in ClubElo (2022 snapshot):
@@ -17,8 +17,6 @@ CONFIRMED Bundesliga team names in ClubElo (2022 snapshot):
 Output: data/raw/elo_raw.csv          — ELO per team per date (GER Buli only)
         data/raw/match_elo.csv        — one row per match, home_elo + away_elo added
 
-Incremental: dates already present in elo_raw.csv are skipped, so re-runs only
-fetch new match dates plus any dates that failed on a previous run.
 """
 
 import asyncio
@@ -36,7 +34,7 @@ OUTPUT_DIR  = DATA_RAW_DIR
 ELO_RAW_PATH = os.path.join(OUTPUT_DIR, "elo_raw.csv")
 SLEEP_SEC   = 0.4
 
-# ── Name map: Understat spelling → ClubElo spelling ───────────────────────────
+# Name map: Understat spelling → ClubElo spelling
 # Built from confirmed real data. Left side = exactly as Understat returns it
 # in h_team / a_team fields. Right side = exactly as ClubElo returns it.
 NAME_MAP = {
@@ -163,7 +161,7 @@ async def main():
     elo_raw.to_csv(ELO_RAW_PATH, index=False)
     print(f"\nELO rows total: {len(elo_raw):,} ({len(new_elo):,} newly fetched)")
 
-    # ── Join ELO to match metadata ─────────────────────────────────────────
+    # Join ELO to match metadata
     # Strategy: map Understat team names to ClubElo names, then join on
     # (clubelo_name, match_date)
     meta["home_elo_name"] = meta["home_team"].map(NAME_MAP)

@@ -19,7 +19,7 @@ POST_BINS <- 3L   # 15-min post-equaliser horizon = 3 bins after the washout bin
 shots <- read_csv(file.path(DATA_RAW_DIR, "shots_raw.csv"), show_col_types = FALSE)
 melo  <- read_csv(file.path(DATA_RAW_DIR, "match_elo.csv"),  show_col_types = FALSE)
 
-# ── 1. goal_events ────────────────────────────────────────────────────────────
+# 1. goal_events
 # Own goals sit under the conceding team; the goal credits the opponent
 # (validated: 100% of matches reconcile under this convention).
 goal_events <- shots %>%
@@ -50,7 +50,7 @@ goal_events <- shots %>%
          score_a, is_own_goal, is_equaliser, qualifying_eq,
          next_scorer, next_minute)
 
-# ── 2. team_windows ───────────────────────────────────────────────────────────
+# 2. team_windows
 bin_of <- function(minute) pmin(minute %/% 5L, N_BINS - 1L)
 
 matches <- melo %>%
@@ -150,7 +150,7 @@ windows <- windows %>%
          goal_diff, state, own_washout, own_post, own_post_eq_minute,
          opp_washout, opp_post, opp_post_eq_minute)
 
-# ── 3. equaliser_events ───────────────────────────────────────────────────────
+# 3. equaliser_events
 equaliser_events <- goal_events %>%
   filter(qualifying_eq) %>%
   left_join(matches %>% select(match_id, home_elo, away_elo), by = "match_id") %>%
@@ -168,12 +168,12 @@ equaliser_events <- goal_events %>%
          eq_minute = minute, scoreline, elo_diff, goal_seq,
          next_goal, next_goal_minute = next_minute, time_to_next)
 
-# ── write ─────────────────────────────────────────────────────────────────────
+# write
 write_csv(goal_events,      file.path(DATA_PROCESSED_DIR, "goal_events.csv"))
 write_csv(windows,          file.path(DATA_PROCESSED_DIR, "team_windows.csv"))
 write_csv(equaliser_events, file.path(DATA_PROCESSED_DIR, "equaliser_events.csv"))
 
-# ── validation summary ────────────────────────────────────────────────────────
+# validation summary
 cat("==========================================================\n")
 cat("DATASET BUILD SUMMARY\n")
 cat("==========================================================\n")
