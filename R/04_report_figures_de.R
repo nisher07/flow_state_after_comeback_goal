@@ -1,11 +1,9 @@
-# 04_report_figures.R
+# 04_report_figures_de.R
 # ==============================================================================
-# ALL report figures live in this single file. Output: output/figures/report/
+# German-language version of 04_report_figures.R - identical data, models and
+# layout, only the plot text is translated. Output: output/figures/report_de/
 #
-# Style: shared theme_sport() (bold title, grey subtitle, small data-source
-# overrides are layered with theme(...). Legend wording: "Equalising team" / "Opponent".
-#
-# Run from the project root:  Rscript R/04_report_figures.R
+# Run from the project root:  Rscript R/04_report_figures_de.R
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -21,13 +19,13 @@ suppressPackageStartupMessages({
 source("config.R")
 set.seed(42)
 
-REPORT_DIR <- file.path(OUTPUT_FIGURES_DIR, "report")
+REPORT_DIR <- file.path(OUTPUT_FIGURES_DIR, "report_de")
 dir.create(REPORT_DIR, showWarnings = FALSE, recursive = TRUE)
 
 ball_blue <- rasterGrob(readPNG("assets/football_icons/blue.png"),
                         interpolate = TRUE)
 
-pal_side <- c("Equalising team" = COL_EQ, "Opponent" = COL_OPP)
+pal_side <- c("Ausgleichsteam" = COL_EQ, "Gegner" = COL_OPP)
 
 # Font size in points is constant regardless of a plot's physical width, so a
 # wide figure's subtitle reads smaller than a narrow one once every PNG is
@@ -35,13 +33,6 @@ pal_side <- c("Equalising team" = COL_EQ, "Opponent" = COL_OPP)
 # as the same size, at a baseline a little smaller than theme_sport()'s own.
 REPORT_SUBTITLE_PT <- 10
 subtitle_size <- function(width_in) REPORT_SUBTITLE_PT * width_in / 10
-
-# Shared theme: theme_sport() from config.R (the project's visual identity).
-# Layout-specific needs are layered per plot with theme(...), never by
-# redefining the theme. Shared mark conventions:
-#   curves: linewidth 1.7, points 3.5, ribbons alpha 0.15
-#   annotations: size 3.4 bold, arrows 0.7 curvature 0.3 closed 0.20cm
-#   baseline note: size 3 italic grey40 · n-labels: 3.3 italic grey40
 
 # H1 model (identical spec to 02_train_poisson_model.R)
 windows_raw <- read_csv(file.path(DATA_PROCESSED_DIR, "team_windows.csv"),
@@ -79,12 +70,12 @@ eqs <- read_csv(file.path(DATA_PROCESSED_DIR, "equaliser_events.csv"),
                 show_col_types = FALSE) %>%
   filter(eq_minute <= 70) %>%
   mutate(eq_bin = pmin(eq_minute %/% 5L, 17L), eq_id = row_number(),
-         phase = factor(case_when(eq_minute < 30 ~ "Early equaliser (<30')",
-                                  eq_minute <= 50 ~ "Mid equaliser (30'-50')",
-                                  TRUE            ~ "Late equaliser (51'-70')"),
-                        levels = c("Early equaliser (<30')",
-                                   "Mid equaliser (30'-50')",
-                                   "Late equaliser (51'-70')")))
+         phase = factor(case_when(eq_minute < 30 ~ "Früher Ausgleich (<30')",
+                                  eq_minute <= 50 ~ "Mittlerer Ausgleich (30'-50')",
+                                  TRUE            ~ "Später Ausgleich (51'-70')"),
+                        levels = c("Früher Ausgleich (<30')",
+                                   "Mittlerer Ausgleich (30'-50')",
+                                   "Später Ausgleich (51'-70')")))
 
 windows_raw$pred <- as.numeric(predict(fit, newdata = windows_raw,
                                        type = "response"))
@@ -96,7 +87,7 @@ panel <- eqs %>%
   pivot_longer(c(eq_team, eq_opp), names_to = "side", values_to = "team") %>%
   inner_join(windows_raw %>% select(match_id, team, bin, xg, pred),
              by = c("match_id", "team", "bin")) %>%
-  mutate(side = if_else(side == "eq_team", "Equalising team", "Opponent"))
+  mutate(side = if_else(side == "eq_team", "Ausgleichsteam", "Gegner"))
 
 curve <- panel %>%
   group_by(side, offset) %>%
@@ -132,43 +123,43 @@ f01 <- ggplot(curve, aes(offset, ratio, colour = side, fill = side)) +
 
   annotation_custom(ball_blue, xmin = -0.22, xmax = 0.22,
                     ymin = 1.72, ymax = 1.80) +
-  annotate("text", x = 0, y = 1.70, label = "EQUALISER",
+  annotate("text", x = 0, y = 1.70, label = "AUSGLEICH",
            colour = COL_EQ, fontface = "bold", size = 4.5, vjust = 1) +
 
   annotate("text", x = -3.15, y = 1.03, hjust = 0, vjust = 0,
-           label = "Baseline (expected performance)",
+           label = "Basislinie (erwartete Leistung)",
            colour = "grey40", fontface = "italic", size = 3) +
 
   annotate("text", x = 2.1, y = 0.78, hjust = 0, lineheight = 0.95,
-           label = "Opponent dips for ~5 minutes,\nthen returns to normal",
+           label = "Der Gegner fällt für ~5 Minuten ab,\ndann normalisiert er sich wieder",
            colour = COL_OPP, fontface = "bold", size = 3.4) +
   annotate("curve", x = 2.05, y = 0.795, xend = 1.12, yend = 0.845,
            curvature = -0.3, colour = COL_OPP, linewidth = 0.7,
            arrow = arrow(length = unit(0.2, "cm"), type = "closed")) +
 
   annotate("text", x = 4.4, y = 1.42, hjust = 0, lineheight = 0.95,
-           label = "Equalising team never rises\nmeaningfully above baseline",
+           label = "Das Ausgleichsteam steigt nie\nnennenswert über die Basislinie",
            colour = COL_EQ, fontface = "bold", size = 3.4) +
   annotate("curve", x = 4.35, y = 1.38, xend = 3.15, yend = 1.13,
            curvature = 0.3, colour = COL_EQ, linewidth = 0.7,
            arrow = arrow(length = unit(0.2, "cm"), type = "closed")) +
 
   scale_x_continuous(breaks = c(-3:-1, 0, 1:6),
-                     labels = c("-15'", "-10'", "-5'", "GOAL", "+5'", "+10'",
+                     labels = c("-15'", "-10'", "-5'", "TOR", "+5'", "+10'",
                                 "+15'", "+20'", "+25'", "+30'")) +
   scale_y_continuous(labels = function(v) sprintf("%.1fx", v)) +
   scale_colour_manual(values = pal_side, name = NULL) +
   scale_fill_manual(values = pal_side, name = NULL) +
   coord_cartesian(xlim = c(-3.2, 7.1), ylim = c(0.72, 1.8)) +
   labs(
-    title    = "Opponent Holds the Momentum",
+    title    = "Der Gegner hat das Momentum",
     subtitle = sprintf(
-      "Attacking output of both teams, 15 minutes before to 30 minutes after a comeback equaliser · shaded strip = first 15 minutes after the goal\n%s equalisers (<= 70') in %s Bundesliga matches, 2016/17-2025/26 · shaded ribbons = 95%% uncertainty band",
+      "Angriffsleistung beider Mannschaften, 15 Minuten vor bis 30 Minuten nach einem Ausgleichstor · schattierter Bereich = erste 15 Minuten nach dem Tor\n%s Ausgleichstore (<= 70') in %s Bundesliga-Spielen, 2016/17-2025/26 · schattierte Bänder = 95%%-Unsicherheitsbereich",
       format(nrow(eqs), big.mark = ","),
       format(n_distinct(eqs$match_id), big.mark = ",")),
-    x = "Minutes relative to comeback equaliser",
-    y = "Attacking output ratio (observed / expected xG)",
-    caption = "Data: Understat, ClubElo · Analysis: R (ggplot2, dplyr, mgcv)"
+    x = "Minuten relativ zum Ausgleichstor",
+    y = "Angriffsleistung (beobachtet / erwartetes xG)",
+    caption = "Daten: Understat, ClubElo · Analyse: R (ggplot2, dplyr, mgcv)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(11)))
@@ -178,9 +169,9 @@ ggsave(file.path(REPORT_DIR, "01_momentum_decay.png"), f01,
 # 02: scoreboard - before vs after, both teams
 board <- panel %>%
   filter(offset %in% c(-3:-1, 1:3)) %>%
-  mutate(phase_ba = factor(if_else(offset < 0, "Before", "After"),
-                           levels = c("Before", "After")),
-         side = factor(side, levels = c("Opponent", "Equalising team"))) %>%
+  mutate(phase_ba = factor(if_else(offset < 0, "Vorher", "Nachher"),
+                           levels = c("Vorher", "Nachher")),
+         side = factor(side, levels = c("Gegner", "Ausgleichsteam"))) %>%
   group_by(side, phase_ba) %>%
   summarise(ratio = sum(xg) / sum(pred), .groups = "drop")
 
@@ -191,18 +182,18 @@ f02 <- ggplot(board, aes(phase_ba, ratio, fill = side)) +
   geom_text(aes(label = sprintf("%.2fx", ratio)), vjust = -0.6,
             colour = COL_NEUTRAL, fontface = "bold", size = 7) +
   annotate("text", x = 0.62, y = 1.035, hjust = 1, size = 2.8,
-           colour = "grey45", fontface = "italic", label = "Baseline") +
+           colour = "grey45", fontface = "italic", label = "Basis") +
   facet_wrap(~side) +
   scale_fill_manual(values = pal_side, guide = "none") +
   coord_cartesian(ylim = c(0, 1.55)) +
   scale_y_continuous(labels = function(v) sprintf("%.1fx", v)) +
   labs(
-    title    = "Opponent Collapses, Scorer Holds",
-    subtitle = sprintf("Mean attacking output 15 minutes before vs 15 minutes after the comeback equaliser\n%s equalisers (<= 70'), Bundesliga 2016/17-2025/26",
+    title    = "Der Gegner bricht ein, der Torschütze bleibt stabil",
+    subtitle = sprintf("Mittlere Angriffsleistung 15 Minuten vor und 15 Minuten nach dem Ausgleichstor\n%s Ausgleichstore (<= 70'), Bundesliga 2016/17-2025/26",
                        format(nrow(eqs), big.mark = ",")),
     x = NULL,
-    y = "Attacking output ratio (observed / expected xG)",
-    caption = "Data: Understat, ClubElo · Analysis: R (ggplot2, dplyr, mgcv)"
+    y = "Angriffsleistung (beobachtet / erwartetes xG)",
+    caption = "Daten: Understat, ClubElo · Analyse: R (ggplot2, dplyr, mgcv)"
   ) +
   theme_sport() +
   theme(panel.grid.major.x = element_blank(),
@@ -220,7 +211,7 @@ curve_phase <- panel %>%
   summarise(ratio = sum(xg) / sum(pred), .groups = "drop")
 
 n_phase <- eqs %>% count(phase) %>%
-  mutate(label = sprintf("n = %s equalisers", format(n, big.mark = ",")))
+  mutate(label = sprintf("n = %s Ausgleichstore", format(n, big.mark = ",")))
 
 f03 <- ggplot(curve_phase, aes(offset, ratio, colour = side)) +
   geom_hline(yintercept = 1, linetype = "dashed", colour = "grey50",
@@ -231,7 +222,7 @@ f03 <- ggplot(curve_phase, aes(offset, ratio, colour = side)) +
   geom_point(size = 2.6) +
   annotation_custom(ball_blue, xmin = -0.35, xmax = 0.35,
                     ymin = 2.24, ymax = 2.40) +
-  annotate("text", x = 0, y = 2.19, label = "Equaliser",
+  annotate("text", x = 0, y = 2.19, label = "Ausgleich",
            colour = COL_NEUTRAL, fontface = "bold", size = 3.6, hjust = 0.5) +
   geom_text(data = n_phase, aes(x = 6, y = 2.33, label = label),
             inherit.aes = FALSE, hjust = 1, size = 3.3, colour = "grey40",
@@ -243,11 +234,11 @@ f03 <- ggplot(curve_phase, aes(offset, ratio, colour = side)) +
   scale_colour_manual(values = pal_side, name = NULL) +
   coord_cartesian(ylim = c(0.55, 2.42)) +
   labs(
-    title    = "Early Shock vs. Late Stability",
-    subtitle = "Attacking output of both teams split by equaliser timing · Opponent's pre-goal dominance and post-goal dip fade with match time\n· Equalising team's curve stays flat in all three panels · Bundesliga 2016/17-2025/26",
-    x = "Minutes relative to comeback equaliser",
-    y = "Attacking output ratio (observed / expected xG)",
-    caption = "Data: Understat, ClubElo · Analysis: R (ggplot2, dplyr, mgcv)"
+    title    = "Früher Schock, späte Stabilität",
+    subtitle = "Angriffsleistung beider Mannschaften, aufgeschlüsselt nach dem Zeitpunkt des Ausgleichs\n· Die Dominanz des Gegners vor dem Tor und der Einbruch danach lassen mit der Spielzeit nach\n· Die Kurve des Ausgleichsteams bleibt in allen drei Feldern flach · Bundesliga 2016/17-2025/26",
+    x = "Minuten relativ zum Ausgleichstor",
+    y = "Angriffsleistung (beobachtet / erwartetes xG)",
+    caption = "Daten: Understat, ClubElo · Analyse: R (ggplot2, dplyr, mgcv)"
   ) +
   theme_sport() +
   theme(panel.spacing.x = unit(1.2, "lines"),
@@ -280,16 +271,16 @@ f04 <- ggplot(tibble(gap = placebo), aes(gap)) +
   geom_vline(xintercept = gap_mirror, colour = COL_OPP, linewidth = 1.1) +
   annotate("text", x = gap_treat + 0.0004, y = Inf, vjust = 1.6, hjust = 0,
            colour = COL_EQ, size = 3.3, fontface = "bold",
-           label = sprintf("Equalising team\n%+.4f (p = %.2f)", gap_treat, p_treat)) +
+           label = sprintf("Ausgleichsteam\n%+.4f (p = %.2f)", gap_treat, p_treat)) +
   annotate("text", x = gap_mirror - 0.0004, y = Inf, vjust = 1.6, hjust = 1,
            colour = COL_OPP, size = 3.3, fontface = "bold",
-           label = sprintf("Opponent\n%+.4f (p = %.2f)", gap_mirror, p_mirror)) +
+           label = sprintf("Gegner\n%+.4f (p = %.2f)", gap_mirror, p_mirror)) +
   labs(
-    title    = "Post-Goal Changes Are Pure Chance",
-    subtitle = "Grey: 1,000 placebo samples of ordinary level-score windows (no equaliser involved), matched on match time\n· a line inside the grey range = indistinguishable from normal fluctuation",
-    x = "Average gap between observed and expected chances (xG per 5 minutes)",
-    y = "Number of placebo samples",
-    caption = "Data: Understat, ClubElo · Analysis: R (mgcv, dplyr)"
+    title    = "Veränderungen nach dem Tor sind reiner Zufall",
+    subtitle = "Grau: 1.000 Placebo-Stichproben aus gewöhnlichen Phasen bei Gleichstand (ohne Ausgleichstor), abgeglichen nach Spielzeit\n· eine Linie innerhalb des grauen Bereichs = nicht von normaler Schwankung zu unterscheiden",
+    x = "Durchschnittliche Differenz zwischen beobachteten und erwarteten Chancen (xG pro 5 Minuten)",
+    y = "Anzahl der Placebo-Stichproben",
+    caption = "Daten: Understat, ClubElo · Analyse: R (mgcv, dplyr)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -318,13 +309,13 @@ treat_tr <- treat %>%
   filter(is.na(next_minute) | bin_start < next_minute)
 
 specs <- bind_rows(
-  boot_ratio(treat,    "xg",      "pred",       "eq_key") %>% mutate(spec = "Main: xG (Tweedie)"),
-  boot_ratio(treat,    "n_shots", "pred_shots", "eq_key") %>% mutate(spec = "Shot counts (Poisson)"),
-  boot_ratio(treat_ns, "xg",      "pred_ns",    "eq_key") %>% mutate(spec = "Excl. stoppage bins"),
-  boot_ratio(treat_tr, "xg",      "pred",       "eq_key") %>% mutate(spec = "Truncated at next goal"),
-  boot_ratio(mirror,   "xg",      "pred",       "eq_key") %>% mutate(spec = "Opponent (mirror)")
+  boot_ratio(treat,    "xg",      "pred",       "eq_key") %>% mutate(spec = "Haupt: xG (Tweedie)"),
+  boot_ratio(treat,    "n_shots", "pred_shots", "eq_key") %>% mutate(spec = "Schussanzahl (Poisson)"),
+  boot_ratio(treat_ns, "xg",      "pred_ns",    "eq_key") %>% mutate(spec = "Ohne Nachspielzeit-Bins"),
+  boot_ratio(treat_tr, "xg",      "pred",       "eq_key") %>% mutate(spec = "Gekappt beim nächsten Tor"),
+  boot_ratio(mirror,   "xg",      "pred",       "eq_key") %>% mutate(spec = "Gegner (Spiegel)")
 ) %>%
-  mutate(side = if_else(spec == "Opponent (mirror)", "Opponent", "Equalising team"),
+  mutate(side = if_else(spec == "Gegner (Spiegel)", "Gegner", "Ausgleichsteam"),
          spec = factor(spec, levels = rev(unique(spec))))
 
 f05 <- ggplot(specs, aes(est, spec, colour = side)) +
@@ -336,11 +327,11 @@ f05 <- ggplot(specs, aes(est, spec, colour = side)) +
             colour = COL_NEUTRAL) +
   scale_colour_manual(values = pal_side, guide = "none") +
   labs(
-    title    = "No-Surge Trend Holds Across Models",
-    subtitle = "Post-equaliser output ratio under different analysis choices · whiskers = 95% uncertainty \n· every Equalising-team whisker crosses 1 (no effect)",
-    x = "Attacking output ratio (observed / expected)",
+    title    = "Kein Leistungsschub – in jedem Modell bestätigt",
+    subtitle = "Angriffsleistung nach dem Ausgleich unter verschiedenen Analyseansätzen · Fehlerbalken = 95%-Unsicherheitsbereich \n· jeder Fehlerbalken des Ausgleichsteams überschneidet sich mit 1 (kein Effekt)",
+    x = "Angriffsleistung (beobachtet / erwartet)",
     y = NULL,
-    caption = "Data: Understat, ClubElo · Analysis: R (mgcv, dplyr)"
+    caption = "Daten: Understat, ClubElo · Analyse: R (mgcv, dplyr)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -388,16 +379,16 @@ f06 <- ggplot() +
   geom_line(data = grid6, aes(elo_100 * 100, p), colour = COL_EQ,
             linewidth = 1.6) +
   scale_colour_manual(values = c(`1` = COL_EQ, `0` = COL_OPP),
-                      labels = c(`1` = "Equalising team scored next (y = 1)",
-                                 `0` = "Opponent scored next (y = 0)"),
+                      labels = c(`1` = "Ausgleichsteam traf als Nächstes (y = 1)",
+                                 `0` = "Gegner traf als Nächstes (y = 0)"),
                       name = NULL) +
   scale_y_continuous(breaks = c(0, 0.5, 1), labels = c("0", "50%", "1")) +
   labs(
-    title    = "Higher ELO Boosts Next-Goal Odds",
-    subtitle = "Each dot = one equaliser with a next goal (968), plotted at its true outcome (0 or 1) · the curve is the model's fitted chance\nthe Equalising team scores next · darker patches = many overlapping equalisers at similar ELO gaps",
-    x = "Equalising team's ELO advantage (rating points)",
-    y = "Outcome / fitted chance of scoring next",
-    caption = "Data: Understat, ClubElo · Analysis: R (glm, binomial)"
+    title    = "Höhere ELO-Wertung erhöht die Chance auf das nächste Tor",
+    subtitle = "Jeder Punkt = ein Ausgleichstor mit einem nächsten Tor (968), dargestellt beim tatsächlichen Ergebnis (0 oder 1)\n· die Kurve zeigt die vom Modell geschätzte Chance, dass das Ausgleichsteam als Nächstes trifft\n· dunklere Bereiche = viele überlappende Ausgleichstore bei ähnlichem ELO-Abstand",
+    x = "ELO-Vorteil des Ausgleichsteams (Wertungspunkte)",
+    y = "Ergebnis / geschätzte Trefferchance beim nächsten Tor",
+    caption = "Daten: Understat, ClubElo · Analyse: R (glm, binomial)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -412,17 +403,17 @@ or_rows <- function(f, d, model_lab) {
          model = model_lab)
 }
 ors <- bind_rows(
-  or_rows(fit_p, decided, "primary"),
-  or_rows(fit_e, decided, "extended") %>%
+  or_rows(fit_p, decided, "Primärmodell"),
+  or_rows(fit_e, decided, "Erweitertes Modell") %>%
     filter(!term %in% c("(Intercept)", "elo_100", "home_sign"))
 ) %>%
   mutate(label = recode(term,
-    "(Intercept)" = "Momentum test (intercept)",
-    "elo_100"     = "ELO advantage (per 100 pts)",
-    "home_sign"   = "Home effect",
-    "minute_c"    = "Equaliser minute (per 15')",
-    "score_f2-2"  = "Scoreline 2-2 (vs 1-1)",
-    "score_f3-3+" = "Scoreline 3-3+ (vs 1-1)")) %>%
+    "(Intercept)" = "Momentum-Test (Achsenabschnitt)",
+    "elo_100"     = "ELO-Vorteil (pro 100 Punkte)",
+    "home_sign"   = "Heimvorteil",
+    "minute_c"    = "Ausgleichsminute (pro 15')",
+    "score_f2-2"  = "Spielstand 2:2 (vs. 1:1)",
+    "score_f3-3+" = "Spielstand 3:3+ (vs. 1:1)")) %>%
   mutate(label = factor(label, levels = rev(unique(label))))
 
 f07 <- ggplot(ors, aes(or, label, colour = model)) +
@@ -433,14 +424,14 @@ f07 <- ggplot(ors, aes(or, label, colour = model)) +
   geom_text(aes(label = sprintf("%.2f", or)), vjust = -1, size = 3,
             colour = COL_NEUTRAL) +
   scale_x_log10() +
-  scale_colour_manual(values = c(primary = COL_EQ, extended = COL_GREY),
+  scale_colour_manual(values = c("Primärmodell" = COL_EQ, "Erweitertes Modell" = COL_GREY),
                       name = NULL) +
   labs(
-    title    = "Strength and Home Effect Drive the Odds",
-    subtitle = "How each factor multiplies the odds that the Equalising team scores next · whiskers = 95% uncertainty \n· dashed line at 1 = no effect · 968 equalisers with a next goal, match-clustered standard errors, log scale",
-    x = "Odds ratio - next goal goes to the Equalising team",
+    title    = "Stärke und Heimvorteil bestimmen die Quote",
+    subtitle = "Wie stark jeder Faktor die Quote erhöht, dass das Ausgleichsteam als Nächstes trifft\n· Fehlerbalken = 95%-Unsicherheitsbereich · gestrichelte Linie bei 1 = kein Effekt\n· 968 Ausgleichstore mit einem nächsten Tor, nach Spiel geclusterte Standardfehler,\nlogarithmische Skala",
+    x = "Odds Ratio – nächstes Tor geht an das Ausgleichsteam",
     y = NULL,
-    caption = "Data: Understat, ClubElo · Analysis: R (glm, binomial)"
+    caption = "Daten: Understat, ClubElo · Analyse: R (glm, binomial)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -450,18 +441,18 @@ ggsave(file.path(REPORT_DIR, "07_logistic_forest.png"), f07,
 # 08: logistic prediction curves by home effect
 grid8 <- crossing(elo_100 = seq(-4, 4, 0.05), home_sign = c(1, -1)) %>%
   mutate(p = plogis(cf[1] + cf[2] * elo_100 + cf[3] * home_sign),
-         venue = if_else(home_sign == 1, "Equaliser at home", "Equaliser away"))
+         venue = if_else(home_sign == 1, "Ausgleich zu Hause", "Ausgleich auswärts"))
 
 pts8 <- decided %>%
-  mutate(venue = if_else(home_sign == 1, "Equaliser at home", "Equaliser away"),
+  mutate(venue = if_else(home_sign == 1, "Ausgleich zu Hause", "Ausgleich auswärts"),
          bin = cut(elo_100, breaks = c(-Inf, -1.5, -0.75, -0.25, 0.25, 0.75, 1.5, Inf))) %>%
   group_by(venue, bin) %>%
   summarise(elo_100 = mean(elo_100), p = mean(y), n = n(), .groups = "drop")
 
-cross <- tibble(venue = c("Equaliser at home", "Equaliser away"),
+cross <- tibble(venue = c("Ausgleich zu Hause", "Ausgleich auswärts"),
                 x0 = c(-(cf[1] + cf[3]) / cf[2], -(cf[1] - cf[3]) / cf[2]) * 100)
 
-pal8 <- c("Equaliser at home" = COL_EQ, "Equaliser away" = COL_NEUTRAL)
+pal8 <- c("Ausgleich zu Hause" = COL_EQ, "Ausgleich auswärts" = COL_NEUTRAL)
 f08 <- ggplot(grid8, aes(elo_100 * 100, p, colour = venue)) +
   geom_hline(yintercept = 0.5, linetype = "dashed", colour = "grey45",
              linewidth = 0.5) +
@@ -474,16 +465,16 @@ f08 <- ggplot(grid8, aes(elo_100 * 100, p, colour = venue)) +
   geom_vline(data = cross, aes(xintercept = x0, colour = venue),
              linetype = "dotted", linewidth = 0.5, show.legend = FALSE) +
   geom_text(data = cross,
-            aes(x = x0, y = 0.19, label = sprintf("50%% at %+.0f ELO", x0)),
+            aes(x = x0, y = 0.19, label = sprintf("50%% bei %+.0f ELO", x0)),
             size = 2.9, hjust = -0.05, show.legend = FALSE) +
   scale_colour_manual(values = pal8, name = NULL) +
   scale_y_continuous(labels = function(v) sprintf("%.0f%%", v * 100)) +
   labs(
-    title    = "Home Advantage Shifts Next-Goal Odds",
-    subtitle = "The model's predicted chance the Equalising team scores next · dots = what actually happened in ELO groups,\nsized and labelled by number of equalisers in the group · 968 equalisers with a next goal",
-    x = "Equalising team's ELO advantage (rating points)",
-    y = "Chance the Equalising team scores next",
-    caption = "Data: Understat, ClubElo · Analysis: R (glm, binomial)"
+    title    = "Der Heimvorteil verschiebt die Chance auf das nächste Tor",
+    subtitle = "Die vom Modell geschätzte Chance, dass das Ausgleichsteam als Nächstes trifft · Punkte = tatsächliche Ergebnisse in ELO-Gruppen,\nGröße und Beschriftung nach Anzahl der Ausgleichstore in der Gruppe · 968 Ausgleichstore mit einem nächsten Tor",
+    x = "ELO-Vorteil des Ausgleichsteams (Wertungspunkte)",
+    y = "Chance, dass das Ausgleichsteam als Nächstes trifft",
+    caption = "Daten: Understat, ClubElo · Analyse: R (glm, binomial)"
   ) +
   coord_cartesian(ylim = c(0.15, 0.85)) +
   theme_sport() +
@@ -500,17 +491,17 @@ f09 <- ggplot(decided, aes(p_hat, fill = factor(y))) +
   geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey45",
              linewidth = 0.6) +
   annotate("text", x = 0.505, y = Inf, vjust = 1.4, hjust = 0, size = 3,
-           colour = "grey40", label = "0.5 cutoff") +
+           colour = "grey40", label = "Schwellenwert 0,5") +
   scale_fill_manual(values = c(`1` = COL_EQ, `0` = COL_OPP),
-                    labels = c(`1` = "Equalising team scored next",
-                               `0` = "Opponent scored next"),
-                    name = "Actual outcome") +
+                    labels = c(`1` = "Ausgleichsteam traf als Nächstes",
+                               `0` = "Gegner traf als Nächstes"),
+                    name = "Tatsächliches Ergebnis") +
   labs(
-    title    = "Next Goal Is Mostly Unpredictable",
-    subtitle = sprintf("The model's predicted chance for every equaliser, coloured by what actually happened · heavy overlap = the next goal is \nbarely predictable · accuracy %.2f, AUC %.2f (ELO + home effect model)", acc, auc),
-    x = "Model-predicted chance the Equalising team scores next",
-    y = "Number of equalisers",
-    caption = "Data: Understat, ClubElo · Analysis: R (glm, binomial)"
+    title    = "Das nächste Tor ist kaum vorhersagbar",
+    subtitle = sprintf("Die vom Modell geschätzte Chance für jedes Ausgleichstor, eingefärbt nach dem tatsächlichen Ausgang\n· starke Überlappung = das nächste Tor ist kaum vorhersagbar\n· Trefferquote %.2f, AUC %.2f (Modell: ELO + Heimvorteil)", acc, auc),
+    x = "Vom Modell geschätzte Chance, dass das Ausgleichsteam als Nächstes trifft",
+    y = "Anzahl der Ausgleichstore",
+    caption = "Daten: Understat, ClubElo · Analyse: R (glm, binomial)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -527,11 +518,11 @@ dev_full <- deviance(full)
 drop_dev <- function(f) deviance(glm(f, family = binomial(), data = dd)) - dev_full
 
 importance <- tibble(
-  term = c("Equalising itself\n(momentum, intercept)",
-           "ELO advantage",
-           "Home effect",
-           "Equaliser minute",
-           "Scoreline (2 df)"),
+  term = c("Der Ausgleich selbst\n(Momentum, Achsenabschnitt)",
+           "ELO-Vorteil",
+           "Heimvorteil",
+           "Ausgleichsminute",
+           "Spielstand (2 FG)"),
   chisq = c(drop_dev(y ~ 0 + elo_100 + home_sign + minute_c + s22 + s33),
             drop_dev(y ~ home_sign + minute_c + s22 + s33),
             drop_dev(y ~ elo_100 + minute_c + s22 + s33),
@@ -540,7 +531,7 @@ importance <- tibble(
   df = c(1, 1, 1, 1, 2)
 ) %>%
   mutate(p = pchisq(chisq, df, lower.tail = FALSE),
-         major = term %in% c("ELO advantage", "Home effect"))
+         major = term %in% c("ELO-Vorteil", "Heimvorteil"))
 
 f10 <- ggplot(importance, aes(chisq, reorder(term, chisq), fill = major)) +
   geom_col(width = 0.55) +
@@ -548,7 +539,7 @@ f10 <- ggplot(importance, aes(chisq, reorder(term, chisq), fill = major)) +
              colour = "grey45", linewidth = 0.5) +
   annotate("text", x = qchisq(0.95, 1) + 0.8, y = 0.62, hjust = 0, size = 2.9,
            colour = "grey40", fontface = "italic",
-           label = "5% significance (1 df)") +
+           label = "5 %-Signifikanzniveau (1 FG)") +
   geom_text(aes(label = sprintf("%.1f  (p %s)", chisq,
                                 if_else(p < 0.001, "< 0.001",
                                         sprintf("= %.2f", p)))),
@@ -557,11 +548,11 @@ f10 <- ggplot(importance, aes(chisq, reorder(term, chisq), fill = major)) +
                     guide = "none") +
   coord_cartesian(xlim = c(0, max(importance$chisq) * 1.35)) +
   labs(
-    title    = "ELO Dominates, Momentum Fails",
-    subtitle = "How much the model worsens when each factor is removed · big bar = the factor matters \n· deep blue = the dominant factors · 'Equalising itself' ranked last: the momentum term contributes nothing",
-    x = "Importance - likelihood-ratio chi-square (bigger = matters more)",
+    title    = "ELO dominiert, Momentum versagt",
+    subtitle = "Wie stark sich das Modell verschlechtert, wenn ein Faktor entfernt wird\n· großer Balken = der Faktor ist wichtig · dunkelblau = die dominanten Faktoren\n· 'Der Ausgleich selbst' liegt an letzter Stelle: der Momentum-Term trägt nichts bei",
+    x = "Wichtigkeit – Likelihood-Ratio-Chi-Quadrat (größer = wichtiger)",
     y = NULL,
-    caption = "Data: Understat, ClubElo · Analysis: R (glm, binomial)"
+    caption = "Daten: Understat, ClubElo · Analyse: R (glm, binomial)"
   ) +
   theme_sport() +
   theme(plot.subtitle = element_text(size = subtitle_size(10)))
@@ -569,10 +560,6 @@ ggsave(file.path(REPORT_DIR, "10_feature_importance.png"), f10,
        width = 10, height = 5.5, dpi = 300, bg = COL_BG)
 
 # 11: who scores next? football-pitch styled bars (raw counts, no adjustment)
-# Three stepped bars doubling as a football pitch: outline, centre circle and
-# two mirrored goal-line arcs drawn in white across the bars. Bar heights stay
-# proportional to the true shares. Left to right: Opponent, Equalising team,
-# No further goal.
 n_total <- nrow(eq_all)
 n_none  <- sum(eq_all$next_goal == "none")
 n_team  <- sum(eq_all$next_goal == "team")
@@ -582,7 +569,7 @@ bt      <- binom.test(n_team, n_team + n_opp, p = 0.5)
 PITCH_WHITE <- "white"
 
 bars1 <- tibble(
-  outcome = c("OPPONENT\nscored next", "EQUALISING TEAM\nscored next", "NO further goal"),
+  outcome = c("GEGNER\ntraf als Nächstes", "AUSGLEICHSTEAM\ntraf als Nächstes", "KEIN weiteres Tor"),
   n       = c(n_opp, n_team, n_none),
   colour  = c(COL_OPP, COL_EQ, COL_GREY),
   xmin    = c(0, 1.075, 2.15)
@@ -597,14 +584,11 @@ bars1 <- tibble(
     pct_label = sprintf("%.0f%%", pct)
   )
 
-# Pitch-line positions: left goal line inside the opponent (red) bar, right
-# goal line inside the no-further-goal (grey) bar, top edge crossing only
-# the tallest bar. Centre circle sits on the middle (equalising team) bar.
 pitch_x0 <- 0.20
 pitch_x1 <- 2.98
 pitch_y0 <- 4.5
 pitch_y1 <- sort(bars1$h_main, decreasing = TRUE)[2] + 3.5
-cc_cx    <- bars1$xmid[2]                  # centre circle on the blue bar
+cc_cx    <- bars1$xmid[2]
 cc_cy    <- (pitch_y0 + pitch_y1) / 2
 
 cc_rx <- 0.246
@@ -638,13 +622,13 @@ f11 <- ggplot() +
   scale_x_continuous(limits = c(-0.15, 3.45), expand = c(0, 0)) +
   scale_y_continuous(limits = c(-7.5, 46), expand = c(0, 0)) +
   labs(
-    title    = "No Next-Goal Advantage From Raw Data",
+    title    = "Kein Vorteil beim nächsten Tor – laut Rohdaten",
     subtitle = sprintf(paste0(
-      "What happened next after all %s Bundesliga equalisers, 2016/17-2025/26\n",
-      "every outcome lands close to an even three-way split · the equalising team\n",
-      "vs opponent gap is statistically nothing (p = %.3f)"),
+      "Was nach allen %s Bundesliga-Ausgleichstoren passierte, 2016/17-2025/26\n",
+      "jedes Ergebnis liegt nahe an einer gleichmäßigen Drei-Wege-Verteilung · der Unterschied zwischen\n",
+      "Ausgleichsteam und Gegner ist statistisch bedeutungslos (p = %.3f)"),
       format(n_total, big.mark = ","), bt$p.value),
-    caption  = "Data: Understat · Analysis: R (ggplot2, dplyr)"
+    caption  = "Daten: Understat · Analyse: R (ggplot2, dplyr)"
   ) +
   theme_void(base_size = 13) +
   theme(
@@ -661,9 +645,9 @@ f11 <- ggplot() +
 ggsave(file.path(REPORT_DIR, "11_next_goal_pitch.png"), f11,
        width = 8.2, height = 7.4, dpi = 300, bg = COL_BG)
 
-cat("All 11 report figures written to", REPORT_DIR, "\n")
-cat(sprintf("placebo p (Equalising team) = %.3f | placebo p (Opponent) = %.3f\n",
+cat("Alle 11 Report-Abbildungen (deutsch) geschrieben nach", REPORT_DIR, "\n")
+cat(sprintf("Placebo p (Ausgleichsteam) = %.3f | Placebo p (Gegner) = %.3f\n",
             p_treat, p_mirror))
-cat(sprintf("raw shares: none %.0f%% | team %.0f%% | opponent %.0f%% (binom p = %.3f)\n",
+cat(sprintf("Rohanteile: keins %.0f%% | Team %.0f%% | Gegner %.0f%% (Binomialtest p = %.3f)\n",
             100 * n_none / n_total, 100 * n_team / n_total,
             100 * n_opp / n_total, bt$p.value))

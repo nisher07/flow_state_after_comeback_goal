@@ -51,7 +51,6 @@ This is exactly the kind of match that gives "momentum" its reputation. The ques
 teams subsequently perform as their strength, venue and game state predict.
 The only detectable reaction is a brief dip by the team that conceded.
 
-This is the "momentum debunked" outcome — a legitimate, well-supported result, not a null finding from a project that failed to find anything.
 
 ![Momentum decay curve](output/figures/report/01_momentum_decay.png)
 
@@ -121,13 +120,19 @@ and venue, and worst-case bounds are reported.
 │   ├── 01_build_datasets.R     goal_events · team_windows · equaliser_events
 │   ├── 02_train_poisson_model.R   RQ1: Tweedie counterfactual + placebo + robustness
 │   ├── 03_train_logistic_model.R  RQ2: symmetric logistic + censoring checks
-│   └── 04_report_figures.R     all 10 report figures
+│   ├── 04_report_figures.R     all 11 report figures
+│   └── 04_report_figures_de.R  same 11 figures, German-language labels
 ├── notebooks/                  exploratory data analysis
 ├── assets/football_icons/      goal-marker icons used by the figures
 ├── output/
 │   ├── tables/                 full model outputs (h1_poisson_results.txt, h2_logistic_results.txt)
-│   └── figures/report/         all figures (300 dpi)
+│   └── figures/
+│       ├── report/             all 11 figures, English (300 dpi)
+│       └── report_de/          same 11 figures, German
 └── world_cup_2026/             standalone single-match case studies (presentation demo)
+    ├── world_cup_match.R       English figures
+    ├── world_cup_match_de.R    German figures (written to world_cup_2026/de/)
+    └── world_cup_shots.csv     manually entered shot data (FotMob)
 ```
 
 ## Reproducing the analysis

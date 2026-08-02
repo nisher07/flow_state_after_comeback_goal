@@ -1,28 +1,13 @@
 # =============================================================================
-# World Cup 2026 case-study matches
-# Standalone presentation demo — not part of the model pipeline. Run with the
+# World Cup 2026 case-study matches - German-language version
+# Standalone presentation demo - not part of the model pipeline. Run with the
 # working directory set to this folder (world_cup_2026/).
 # Inputs:  world_cup_shots.csv  (manually entered from FotMob, both matches)
-# Outputs: cumulative_xg_ger_civ.png
-#          cumulative_xg_arg_egy.png
+# Outputs: de/cumulative_xg_ger_civ.png
+#          de/cumulative_xg_arg_egy.png
 # =============================================================================
-# WHAT THIS SCRIPT DOES
-# ---------------------
-# Takes shot-level data for two World Cup 2026 matches (manually entered) and
-# produces one cumulative-xG "Flow State" chart per match: momentum-window
-# shading after the equaliser, football-icon markers with scoreline labels at
-# each goal, dotted equaliser line. The slope of each line in the pre/post
-# regions tells the story.
-#
-# THE MATCHES
-# -----------
-# Germany 2 - 1 Ivory Coast (Round of 16, 20 June 2026)
-#   Goals: Kessie 30', Undav 68' (equaliser), Undav 90+4' (winner)
-#   Total xG (FotMob): Germany 1.89, Ivory Coast 1.22
-#
-# Argentina 3 - 2 Egypt
-#   Goals: Egypt 15', Egypt 67', Argentina 79', Argentina 83' (equaliser),
-#          Argentina 90+2' (winner)
+# Identical data and logic to world_cup_match.R; only the plot text and the
+# printed summaries are translated to German.
 # =============================================================================
 
 library(dplyr)
@@ -32,65 +17,71 @@ library(grid)   # rasterGrob PNG stamping, for goal markers
 library(png)    # readPNG
 
 # 0. Setup
-# Colours (COL_EQ, COL_OPP, COL_NEUTRAL, COL_BG, COL_GRID, ...) and
-# theme_sport() come from the project's shared visual identity in config.R -
-# same theme as R/04_report_figures.R and R/05_article_figures.R, defined
-# once instead of redefined per script.
 source("../config.R")
 
-# Football icon markers — the project's shared assets, via a relative path
-# (script runs from this folder).
+# Font size in points is constant regardless of a plot's physical width; both
+# charts here use the same width, but the helper keeps the convention
+# consistent with the report scripts' subtitle sizing.
+REPORT_SUBTITLE_PT <- 10
+subtitle_size <- function(width_in) REPORT_SUBTITLE_PT * width_in / 10
+
+DE_DIR <- "de"
+dir.create(DE_DIR, showWarnings = FALSE, recursive = TRUE)
+
+# Display names only - the underlying "team" column in world_cup_shots.csv
+# stays in English so joins/filters below are unaffected.
+team_name_de <- c(
+  "Germany"      = "Deutschland",
+  "Ivory Coast"  = "Elfenbeinküste",
+  "Argentina"    = "Argentinien",
+  "Egypt"        = "Ägypten"
+)
+
 ICON_BLUE <- "../assets/football_icons/blue.png"
 ICON_RED  <- "../assets/football_icons/red.png"
 
 for (f in c(ICON_BLUE, ICON_RED)) {
   if (!file.exists(f))
-    stop("Missing icon: ", f, "\nExpected assets/football_icons/ to exist.")
+    stop("Fehlendes Icon: ", f, "\nErwartet wird assets/football_icons/.")
 }
 
 raster_blue <- grid::rasterGrob(png::readPNG(ICON_BLUE), interpolate = TRUE)
 raster_red  <- grid::rasterGrob(png::readPNG(ICON_RED),  interpolate = TRUE)
 
-# Matches the subtitle-sizing convention used in R/04_report_figures.R, so
-# this figure's subtitle reads consistently with the rest of the project.
-REPORT_SUBTITLE_PT <- 10
-subtitle_size <- function(width_in) REPORT_SUBTITLE_PT * width_in / 10
-
 # 1. Load shot data
-# world_cup_shots.csv holds both matches, distinguished by team names.
-# Columns: minute, team, xg, result, situation.
-
 shots_path <- "world_cup_shots.csv"
 
 if (!file.exists(shots_path)) {
-  stop("Shot data not found at ", shots_path)
+  stop("Schussdaten nicht gefunden unter ", shots_path)
 }
 
 shots_all <- read.csv(shots_path) |>
   mutate(minute = as.integer(minute), team = trimws(team))
-cat("Loaded", nrow(shots_all), "shots from", shots_path, "\n\n")
+cat(nrow(shots_all), "Schüsse geladen aus", shots_path, "\n\n")
 
 required_cols <- c("minute", "team", "xg", "result")
 missing <- setdiff(required_cols, names(shots_all))
 if (length(missing) > 0) {
-  stop("Shot CSV missing columns: ", paste(missing, collapse = ", "))
+  stop("Schuss-CSV fehlen Spalten: ", paste(missing, collapse = ", "))
 }
 
-# A single shot's xG must lie in [0, 1] - catches manual-entry typos.
 bad_xg <- shots_all |> filter(xg < 0 | xg > 1)
 if (nrow(bad_xg) > 0) {
   print(bad_xg)
-  stop("Impossible xG values in world_cup_shots.csv (must be in [0, 1]) - fix the rows above.")
+  stop("Unmögliche xG-Werte in world_cup_shots.csv (müssen in [0, 1] liegen) - siehe Zeilen oben.")
 }
 
-cat("Teams in data:", paste(sort(unique(shots_all$team)), collapse = ", "), "\n\n")
+cat("Mannschaften in den Daten:", paste(sort(unique(shots_all$team)), collapse = ", "), "\n\n")
 
-# 2. Cumulative-xG "Flow State" chart, one function for both matches
+# 2. Cumulative-xG "Flow-Zustand" chart, one function for both matches
 
-make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
+make_cum_plot_de <- function(team_eq, team_opp, eq_minute, out_file) {
+
+  team_eq_de  <- team_name_de[[team_eq]]
+  team_opp_de <- team_name_de[[team_opp]]
 
   shots <- shots_all |> filter(team %in% c(team_eq, team_opp))
-  if (nrow(shots) == 0) stop("No shots found for ", team_eq, " vs ", team_opp)
+  if (nrow(shots) == 0) stop("Keine Schüsse gefunden für ", team_eq, " vs ", team_opp)
 
   cumulative <- shots |>
     arrange(team, minute) |>
@@ -101,8 +92,6 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
                      xg = 0, cumulative_xg = 0)) |>
     arrange(team, minute)
 
-  # Cumulative xG immediately after each goal (collapses same-minute ties) —
-  # the height the goal marker sits at.
   cum_by_minute <- cumulative |>
     group_by(team, minute) |>
     summarise(cum_xg = max(cumulative_xg), .groups = "drop")
@@ -125,7 +114,6 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
 
   p <- ggplot() +
 
-    # Momentum window shading
     annotate("rect", xmin = eq_minute, xmax = shade_end,
              ymin = 0, ymax = y_max_cum, fill = COL_EQ, alpha = 0.07) +
 
@@ -159,16 +147,18 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
                colour = COL_EQ, linewidth = 0.9, linetype = "dotted") +
 
     annotate("text", x = eq_minute + 1, y = y_max_cum * 0.32,
-             label = paste0("Equaliser\n(min ", eq_minute, ")"),
+             label = paste0("Ausgleich\n(Minute ", eq_minute, ")"),
              colour = COL_EQ, size = 3.2, hjust = 0, fontface = "italic") +
 
     annotate("text", x = (eq_minute + shade_end) / 2, y = y_max_cum * 0.08,
-             label = "+20 min window",
+             label = "+20-Minuten-Fenster",
              colour = COL_EQ, size = 2.9, hjust = 0.5,
              fontface = "italic", alpha = 0.75) +
 
     scale_colour_manual(
       values = setNames(c(COL_EQ, COL_OPP), c(team_eq, team_opp)),
+      breaks = c(team_eq, team_opp),
+      labels = c(team_eq_de, team_opp_de),
       guide  = guide_legend(override.aes = list(linewidth = 2))
     ) +
     scale_x_continuous(
@@ -183,14 +173,15 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
     ) +
 
     labs(
-      title    = paste0("Flow State in One Match (", team_eq, " vs ", team_opp, ")"),
+      title    = paste0("Flow-Zustand in einem Spiel (", team_eq_de, " vs. ", team_opp_de, ")"),
       subtitle = paste0(
-        "Running total of chances created (xG) by both teams as the match unfolds · A steeper line = more and better chances created in that phase \n · ",
-        "Shaded area = 20 minutes after the comeback equaliser"
+        "Laufende Gesamtzahl der erspielten Chancen (xG) beider Mannschaften im Spielverlauf\n",
+        "· Eine steilere Linie = mehr und bessere Chancen in dieser Phase\n",
+        "· Schattierter Bereich = 20 Minuten nach dem Ausgleichstor"
       ),
-      x       = "Match minute",
-      y       = "Total chances (xG)",
-      caption = "Data: FotMob · Analysis: R (ggplot2, dplyr)"
+      x       = "Spielminute",
+      y       = "Gesamtchancen (xG)",
+      caption = "Daten: FotMob · Analyse: R (ggplot2, dplyr)"
     ) +
     theme_sport() +
     theme(
@@ -200,22 +191,21 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
     )
 
   ggsave(out_file, p, width = 13, height = 6.5, dpi = 200, bg = COL_BG)
-  cat("Saved:", out_file, "\n")
+  cat("Gespeichert:", out_file, "\n")
 
-  # Per-match before/after summary
   summary_stats <- shots |>
-    mutate(period = if_else(minute < eq_minute, "Before equaliser",
-                            "After equaliser")) |>
+    mutate(period = if_else(minute < eq_minute, "Vor dem Ausgleich",
+                            "Nach dem Ausgleich")) |>
     group_by(team, period) |>
     summarise(
       total_xg   = round(sum(xg), 3),
       n_shots    = n(),
-      minutes    = if_else(first(period) == "Before equaliser",
+      minutes    = if_else(first(period) == "Vor dem Ausgleich",
                            eq_minute, max(x_max_cum, 95) - eq_minute),
       xg_per_min = round(total_xg / minutes, 4),
       .groups    = "drop"
     )
-  cat("\n== ", team_eq, " vs ", team_opp, " — summary ==\n", sep = "")
+  cat("\n== ", team_eq_de, " vs ", team_opp_de, " - Zusammenfassung ==\n", sep = "")
   print(summary_stats)
   cat("\n")
 
@@ -224,10 +214,10 @@ make_cum_plot <- function(team_eq, team_opp, eq_minute, out_file) {
 
 # 3. Build both match charts
 
-make_cum_plot(team_eq = "Germany",   team_opp = "Ivory Coast",
-              eq_minute = 68, out_file = "cumulative_xg_ger_civ.png")
+make_cum_plot_de(team_eq = "Germany",   team_opp = "Ivory Coast",
+                 eq_minute = 68, out_file = file.path(DE_DIR, "cumulative_xg_ger_civ.png"))
 
-make_cum_plot(team_eq = "Argentina", team_opp = "Egypt",
-              eq_minute = 83, out_file = "cumulative_xg_arg_egy.png")
+make_cum_plot_de(team_eq = "Argentina", team_opp = "Egypt",
+                 eq_minute = 83, out_file = file.path(DE_DIR, "cumulative_xg_arg_egy.png"))
 
-cat("Done: two cumulative-xG charts written to this folder.\n")
+cat("Fertig: zwei kumulative xG-Diagramme in", DE_DIR, "gespeichert.\n")

@@ -6,8 +6,10 @@ project_instruction.md
 notebooks/02_datasets_doc.ipynb
 notebooks/build_datasets_doc.py
 logistic_explanation.md
-R/05_article_figures.R
-output/figures/article/
+article_momentum_myth.Rmd
+article_momentum_myth.html
+journalist_handover.Rmd
+journalist_handover.html
 
 # Python
 __pycache__/
